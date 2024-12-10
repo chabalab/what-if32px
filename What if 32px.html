@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>32 Pixel look like?</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      #title-container {
+        font-size: 2.5em;
+        margin: 0.5em 0;
+        color: #ffcc00;
+        text-shadow: 2px 2px 0 #ff6600;
+        top: 0;
+        width: 100%;
+        text-align: center;
+        font-weight: bold;
+        z-index: 1000;
+        padding: 10px;
+        background-color: rgba(255, 255, 255, 0);
+        font-family: "Press Start 2P", cursive;
+      }
+
+      #title-container p {
+        font-size: 20px;
+        margin: 0.5em 0;
+        color: #ae00ff;
+        text-shadow: 2px 2px 0 #0004ff;
+        top: 0;
+        width: 100%;
+        text-align: center;
+        font-weight: normal;
+        z-index: 1000;
+        padding: 10px;
+        background-color: rgba(255, 255, 255, 0);
+        font-family: "Press Start 2P", cursive;
+      }
+
+      /* ทั่วไป */
+      body {
+        background-color: #222222;
+        color: white;
+        font-family: "Press Start 2P", cursive; /* ใช้ฟอนต์ที่มีลักษณะเหมือนพิกเซล */
+        text-align: center;
+        padding: 20px;
+        margin: 0;
+        font-size: 14px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+
+      input[type="file"] {
+        padding: 10px;
+        font-size: 1.2em;
+        margin: 10px;
+        background-color: #555555;
+        color: white;
+        border: 2px solid #ff6600;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      input[type="file"]:hover {
+        background-color: #444444;
+      }
+
+      h1 {
+        font-size: 28px;
+        color: #ffee00;
+        text-shadow: #ff6347;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      /* ขนาดของ canvas */
+      canvas {
+        border: 2px solid #ffd700;
+        image-rendering: pixelated;
+        width: 320px;
+        height: 320px;
+        background-color: #1a1a1a;
+      }
+
+      /* ปรับรูปแบบสีของสวอชใน palette */
+      .color-palette {
+        display: flex;
+        flex-wrap: wrap;
+        margin-top: 10px;
+      }
+
+      .color-swatch {
+        width: 20px;
+        height: 20px;
+        margin: 2px;
+        border: 1px solid #ccc;
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+
+      .color-swatch:hover {
+        transform: scale(1.2);
+      }
+
+      /* ปุ่ม */
+      .button-container {
+        margin-top: 20px;
+        display: flex;
+        gap: 10px;
+      }
+
+      button {
+        font-family: "Press Start 2P", cursive;
+        padding: 10px;
+        background-color: #4caf50;
+        color: white;
+        border: 2px solid #4caf50;
+        cursor: pointer;
+        text-transform: uppercase;
+        font-size: 14px;
+        transition: background-color 0.2s, transform 0.2s;
+      }
+
+      button:hover {
+        background-color: #45a049;
+        transform: scale(1.1);
+      }
+
+      button:active {
+        transform: scale(1);
+      }
+
+      button:focus {
+        outline: none;
+      }
+
+      /* ปุ่มดาวน์โหลด */
+      #download-btn {
+        background-color: #0078d4;
+        border-color: #0078d4;
+      }
+
+      #download-btn:hover {
+        background-color: #0063b1;
+      }
+
+      /* ข้อความ */
+      .button-container h1,
+      .color-palette h1 {
+        font-family: "Press Start 2P", cursive;
+        color: #ff6347;
+      }
+      .footer {
+        font-size: 14px;
+        font-family: "ＭＳ Ｐゴシック";
+      }
+      /* ฟอนต์สำหรับ 8-bit */
+    </style>
+  </head>
+  <body>
+    <div id="title-container">
+      <span id="pupffle-pixel">What if 32 pixel?</span>
+      <!-- เพิ่มลิงค์สำหรับฟอนต์ Pixel Art จาก Google Fonts -->
+      <link
+        href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap"
+        rel="stylesheet"
+      />
+      <p>beta.2</p>
+    </div>
+    <input type="file" id="upload" accept="image/*" />
+    <canvas id="canvas"></canvas>
+    <div id="color-palette" class="color-palette"></div>
+
+    <div class="button-container">
+      <button id="colors-2">2</button>
+      <button id="colors-4">4</button>
+      <button id="colors-8">8</button>
+      <button id="colors-16">16</button>
+    </div>
+
+    <div class="button-container">
+      <button id="download-btn">Download</button>
+    </div>
+    <div class="footer">
+      <p>
+        "Please note that the image you select will not be uploaded to any
+        server. <br />
+        processing will be done locally on your device, and the data will only
+        be cached in your browser."
+      </p>
+    </div>
+    <script>
+      const upload = document.getElementById("upload");
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+      const colorPalette = document.getElementById("color-palette");
+      const downloadBtn = document.getElementById("download-btn");
+
+      let image = new Image();
+      let originalImageData = null; // เก็บข้อมูลต้นฉบับ
+
+      upload.addEventListener("change", (event) => {
+        const file = event.target.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            image.src = e.target.result;
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      function quantize(imageData, numColors) {
+        const data = imageData.data;
+        const pixels = [];
+        const colorMap = [];
+
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          pixels.push([r, g, b]);
+        }
+
+        for (let i = 0; i < numColors; i++) {
+          colorMap.push(pixels[Math.floor(Math.random() * pixels.length)]);
+        }
+
+        let hasChanges;
+        do {
+          hasChanges = false;
+          const clusters = Array.from({ length: numColors }, () => []);
+          pixels.forEach((pixel) => {
+            let closest = 0;
+            let closestDistance = Infinity;
+            colorMap.forEach((color, index) => {
+              const distance = Math.sqrt(
+                Math.pow(pixel[0] - color[0], 2) +
+                  Math.pow(pixel[1] - color[1], 2) +
+                  Math.pow(pixel[2] - color[2], 2)
+              );
+              if (distance < closestDistance) {
+                closest = index;
+                closestDistance = distance;
+              }
+            });
+            clusters[closest].push(pixel);
+          });
+
+          clusters.forEach((cluster, index) => {
+            if (cluster.length === 0) return;
+            const avg = cluster
+              .reduce(
+                (sum, pixel) => {
+                  sum[0] += pixel[0];
+                  sum[1] += pixel[1];
+                  sum[2] += pixel[2];
+                  return sum;
+                },
+                [0, 0, 0]
+              )
+              .map((value) => Math.round(value / cluster.length));
+
+            if (
+              avg[0] !== colorMap[index][0] ||
+              avg[1] !== colorMap[index][1] ||
+              avg[2] !== colorMap[index][2]
+            ) {
+              colorMap[index] = avg;
+              hasChanges = true;
+            }
+          });
+        } while (hasChanges);
+
+        for (let i = 0; i < data.length; i += 4) {
+          const r = data[i];
+          const g = data[i + 1];
+          const b = data[i + 2];
+          let closest = 0;
+          let closestDistance = Infinity;
+          colorMap.forEach((color, index) => {
+            const distance = Math.sqrt(
+              Math.pow(r - color[0], 2) +
+                Math.pow(g - color[1], 2) +
+                Math.pow(b - color[2], 2)
+            );
+            if (distance < closestDistance) {
+              closest = index;
+              closestDistance = distance;
+            }
+          });
+          data[i] = colorMap[closest][0];
+          data[i + 1] = colorMap[closest][1];
+          data[i + 2] = colorMap[closest][2];
+        }
+
+        return { imageData, palette: colorMap };
+      }
+
+      function rgbToHsl([r, g, b]) {
+        r /= 255;
+        g /= 255;
+        b /= 255;
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        let h,
+          s,
+          l = (max + min) / 2;
+
+        if (max === min) {
+          h = s = 0;
+        } else {
+          const d = max - min;
+          s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+          switch (max) {
+            case r:
+              h = (g - b) / d + (g < b ? 6 : 0);
+              break;
+            case g:
+              h = (b - r) / d + 2;
+              break;
+            case b:
+              h = (r - g) / d + 4;
+              break;
+          }
+          h /= 6;
+        }
+
+        return [h * 360, s, l];
+      }
+
+      function displayColorPalette(palette) {
+        colorPalette.innerHTML = "";
+        const sortedPalette = palette.sort((a, b) => {
+          const [h1] = rgbToHsl(a);
+          const [h2] = rgbToHsl(b);
+          return h1 - h2;
+        });
+
+        sortedPalette.forEach((color) => {
+          const swatch = document.createElement("div");
+          swatch.className = "color-swatch";
+          swatch.style.backgroundColor = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+          colorPalette.appendChild(swatch);
+        });
+      }
+
+      function updateQuantization(numColors) {
+        if (!image.src) return;
+
+        const originalWidth = image.width;
+        const originalHeight = image.height;
+        const maxDimension = Math.max(originalWidth, originalHeight);
+        const scale = 32 / maxDimension;
+        const newWidth = Math.round(originalWidth * scale);
+        const newHeight = Math.round(originalHeight * scale);
+
+        // กำหนด canvas ขนาด 32x32
+        canvas.width = 32;
+        canvas.height = 32;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const offsetX = (32 - newWidth) / 2;
+        const offsetY = (32 - newHeight) / 2;
+        ctx.drawImage(image, offsetX, offsetY, newWidth, newHeight);
+
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const { imageData: quantizedImageData, palette } = quantize(
+          imageData,
+          numColors
+        );
+
+        ctx.putImageData(quantizedImageData, 0, 0);
+        displayColorPalette(palette);
+      }
+
+      // การดาวน์โหลดภาพ
+      downloadBtn.addEventListener("click", () => {
+        const scalingFactor = 500 / canvas.width; // คำนวณอัตราส่วนการขยาย
+        const width = canvas.width * scalingFactor;
+        const height = canvas.height * scalingFactor;
+
+        // สร้าง canvas ใหม่สำหรับดาวน์โหลดขนาด 500px
+        const downloadCanvas = document.createElement("canvas");
+        const downloadCtx = downloadCanvas.getContext("2d");
+        downloadCanvas.width = width;
+        downloadCanvas.height = height;
+
+        // ทำการ scale รูปภาพในลักษณะ pixelated
+        downloadCtx.imageSmoothingEnabled = false; // ปิดการเบลอ
+        downloadCtx.drawImage(canvas, 0, 0, width, height);
+
+        const dataUrl = downloadCanvas.toDataURL("image/png");
+        const link = document.createElement("a");
+        link.href = dataUrl;
+        link.download = "my32px-look-like.png";
+        link.click();
+      });
+
+      document
+        .getElementById("colors-2")
+        .addEventListener("click", () => updateQuantization(2));
+      document
+        .getElementById("colors-4")
+        .addEventListener("click", () => updateQuantization(4));
+      document
+        .getElementById("colors-8")
+        .addEventListener("click", () => updateQuantization(8));
+      document
+        .getElementById("colors-16")
+        .addEventListener("click", () => updateQuantization(16));
+
+      image.onload = () => {
+        updateQuantization(8);
+      };
+    </script>
+  </body>
+</html>
